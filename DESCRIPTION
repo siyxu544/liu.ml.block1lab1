@@ -1,0 +1,17 @@
+Package: liu.ml.block1lab1
+Type: Package
+Title: R Functions and Scripts for Liu's Machine Learning Course Block 1 Lab 1
+Version: 1.0.0
+Authors@R: c(
+    person(given = "Siyuan", family = "Xu", email = "ningschue@gmail.com", role = c("aut", "cre")),
+    person(given = "Mohan", family = "Zhang", email = "mohzh143@student.liu.se", role = c("aut")),
+    person(given = "Chenzhi", family = "Ni", email = "cheni622@student.liu.se", role = c("aut"))
+    )
+Description: Contains R functions and scripts for the three assignments in the Machine Learning Course 
+    Block 1 Lab 1. This includes implementing K-Nearest Neighbors for digit recognition, 
+    building Ridge Regression models (including log-likelihood and optimization), and applying Logistic 
+    Regression with basis function expansion. Developed by a group of three students for code collaboration 
+    and preparation for the assignment submission & oral defense.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
