@@ -18,7 +18,6 @@ knitr::opts_chunk$set(
 library(liu.ml.block1lab1)
 library(dplyr)        # For data manipulation
 library(here)         # To find the right folder of csv files
-here::i_am("liu.ml.block1lab1.Rproj")
 set.seed(12345)
 ```
 
@@ -28,7 +27,7 @@ set.seed(12345)
 
 ```{r data-prep}
 # Load the csv file
-parkinson_data <- read.csv(here("data", "parkinsons.csv"))
+parkinson_data <- read.csv(here("inst", "extdata", "parkinsons.csv"))
 # Load y and 16 X_i
 predictor <- parkinson_data[, 7:22] # X_i df
 response <- parkinson_data[, 5]     # y vector, which is motor_UPDRS

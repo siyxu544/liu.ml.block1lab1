@@ -1,17 +1,18 @@
-#' Calculate the Log-Likelihood for a Linear Model with Intercept of Zero
+#' Calculate the Ridge Regression Cost Function
 #'
-#' This function computes the total log-likelihood for a linear model
-#' y = theta*X + epsilon, assuming epsilon are i.i.d. Normal(0, sigma^2).
+#' This function computes the penalized minus log-likelihood for a
+#' Ridge regression model. This is the cost function to be *minimized*.
 #'
 #' @param theta A numeric vector of model parameters (β).
 #' @param sigma A single numeric value for the error standard deviation.
 #' @param X A numeric matrix of predictors (training data).
 #' @param y A numeric vector of the response (training data).
+#' @param lambda A single numeric value for the penalty parameter.
 #'
-#' @return A single numeric value: the total log-likelihood.
-#' @importFrom stats dnorm
+#' @return A single numeric value: the total cost (Minus Log-Likelihood + Ridge penalty).
+#'
 #' @export
-LogLikelihood <- function (theta, sigma, X, y) {
+Ridge <- function(theta, sigma, X, y, lambda) {
   if (missing(theta)) {
     stop("Please input theta, the 1st parameter.")
   }
@@ -24,6 +25,9 @@ LogLikelihood <- function (theta, sigma, X, y) {
   if (missing(y)) {
     stop("Please input y, the 4th parameter.")
   }
+  if (missing(lambda)) {
+    stop("Please input lambda, the 5th parameter.")
+  }
   if (!(is.numeric(theta) && length(theta) >= 1)) {
     stop("Invalid input. The parameter theta should be a numeric vector")
   }
@@ -35,6 +39,11 @@ LogLikelihood <- function (theta, sigma, X, y) {
   }
   if (!(is.numeric(y) && length(y) >= 1)) {
     stop("Invalid input. The parameter y should be a numeric vector")
+  }
+  if (!(is.numeric(lambda) && length(lambda) == 1 && lambda >= 0)) {
+    stop(
+      "Invalid input. The parameter lambda should be a numeric scalar equal to or greater than zero"
+    )
   }
   X <- as.matrix(X)
   if (nrow(X) != length(y)) {
@@ -57,13 +66,10 @@ LogLikelihood <- function (theta, sigma, X, y) {
       )
     )
   }
-  # Calculate the y^hat with predictors(X) and their coefficient theta (or β)
-  y_hat <- X %*% theta
-
-  # Calculate the log-likelihood for each observation by PDF function(dnorm()) of normal distribution
-  log_likelihood <- dnorm(y, mean = y_hat, sd = sigma, log = TRUE)
-
-  # Calculate the sum of log-likelihood of single observation
-  sum_log_likelihood <- sum(log_likelihood)
-  return (sum_log_likelihood)
+  # Call the log likelihood function created for assignment 2‘s 3a
+  # and flip the sign of its output to get the minus log likelihood function
+  minus_log_likelihood <- -LogLikelihood(theta, sigma, X, y)
+  # Add the Ridge penalty to the minus_log_likelihood to get total cost
+  total_cost <- minus_log_likelihood + (lambda * sum(theta^2))
+  return(total_cost)
 }
