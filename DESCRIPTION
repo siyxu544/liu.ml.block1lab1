@@ -15,3 +15,7 @@ Description: Contains R functions and scripts for the three assignments in the M
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

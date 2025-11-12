@@ -1,0 +1,63 @@
+---
+title: "Lab_1_report_group_B6"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Lab_1_report_group_B6}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(liu.ml.block1lab1)
+library(dplyr)        # For data manipulation
+library(here)         # To find the right folder of csv files
+here::i_am("liu.ml.block1lab1.Rproj")
+set.seed(12345)
+```
+
+# 2. Linear regression and ridge regression
+
+## 2.1 Data Preparation
+
+```{r data-prep}
+# Load the csv file
+parkinson_data <- read.csv(here("data", "parkinsons.csv"))
+# Load y and 16 X_i
+predictor <- parkinson_data[, 7:22] # X_i df
+response <- parkinson_data[, 5]     # y vector, which is motor_UPDRS
+
+# Ensure reproducibility for the data split
+set.seed(12345)
+n <- nrow(predictor)               # sample size
+train_index <-  sample(1:n, size = floor(0.6 * n))
+
+X_train_raw <- predictor[train_index, ]
+y_train_raw <- response[train_index]
+
+X_test_raw <- predictor[-train_index, ]
+y_test_raw <- response[-train_index]
+
+# Standardization (centering+scaling) of training data
+X_train <- scale(X_train_raw, center = TRUE, scale = TRUE)
+y_train <- scale(y_train_raw, center = TRUE, scale = TRUE)
+
+# Extract μ and σ of training data for scaling of test data
+X_train_mean <- attr(X_train,"scaled:center")
+X_train_sd <- attr(X_train,"scaled:scale")
+y_train_mean <- attr(y_train,"scaled:center")
+y_train_sd <- attr(y_train,"scaled:scale")
+
+# Standardization (centering+scaling) of testing data
+X_test <- scale(X_test_raw, center = X_train_mean, scale = X_train_sd)
+y_test <- scale(y_test_raw, center = y_train_mean, scale = y_train_sd)
+
+y_train<-as.vector(y_train)
+y_test <-as.vector(y_test)
+```
