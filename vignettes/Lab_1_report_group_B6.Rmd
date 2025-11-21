@@ -1,6 +1,10 @@
 ---
 title: "Lab_1_report_group_B6"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    toc: true #  Create Table of Contents
+  rmarkdown::pdf_document: 
+    toc: true
 vignette: >
   %\VignetteIndexEntry{Lab_1_report_group_B6}
   %\VignetteEngine{knitr::rmarkdown}
@@ -24,10 +28,9 @@ set.seed(12345)
 # 2. Linear regression and ridge regression
 
 ## 2.1 Data Preparation
-
 ```{r data-prep}
 # Load the csv file
-parkinson_data <- read.csv(here("inst", "extdata", "parkinsons.csv"))
+parkinson_data <- read.csv(here("inst","extdata","parkinsons.csv"))
 # Load y and 16 X_i
 predictor <- parkinson_data[, 7:22] # X_i df
 response <- parkinson_data[, 5]     # y vector, which is motor_UPDRS
@@ -35,13 +38,13 @@ response <- parkinson_data[, 5]     # y vector, which is motor_UPDRS
 # Ensure reproducibility for the data split
 set.seed(12345)
 n <- nrow(predictor)               # sample size
-train_index <-  sample(1:n, size = floor(0.6 * n))
+index <-  sample(1:n, size = floor(0.6 * n))
 
-X_train_raw <- predictor[train_index, ]
-y_train_raw <- response[train_index]
+X_train_raw <- predictor[index, ]
+y_train_raw <- response[index]
 
-X_test_raw <- predictor[-train_index, ]
-y_test_raw <- response[-train_index]
+X_test_raw <- predictor[-index, ]
+y_test_raw <- response[-index]
 
 # Standardization (centering+scaling) of training data
 X_train <- scale(X_train_raw, center = TRUE, scale = TRUE)
@@ -57,6 +60,92 @@ y_train_sd <- attr(y_train,"scaled:scale")
 X_test <- scale(X_test_raw, center = X_train_mean, scale = X_train_sd)
 y_test <- scale(y_test_raw, center = y_train_mean, scale = y_train_sd)
 
-y_train<-as.vector(y_train)
-y_test <-as.vector(y_test)
+y_train <- as.vector(y_train)
+y_test <- as.vector(y_test)
+```
+## 2.2 Baseline Linear Regression Model (OLS)
+A standard Ordinary Least Squares (OLS) model was computed by using the lm() function. This model could serve as a baseline for comparison against the Ridge regression models.
+```{r OLS model}
+# Combine y_train and X_train into a single data.frame as the input for lm()
+train_data <- data.frame(motor_UPDRS = y_train, X_train)
+# Compute the Linear Regression Model (OLS)
+ols_model <- lm(motor_UPDRS ~ 0 + ., data = train_data, method = "qr")
+# Estimate Training MSE
+mse_train <- mean(ols_model$residuals^2)
+# Estimate Test MSE
+y_hat_test <- predict(ols_model, newdata = as.data.frame(X_test))
+mse_test <- mean((y_test - y_hat_test)^2)
+# Report MSE values
+cat("--- Baseline OLS Model MSE ---\n")
+cat("Train MSE (Standardized):",mse_train,"\n")
+cat("Test MSE (Standardized):",mse_test,"\n\n")
+# Get the summary to find significant variables
+print(summary(ols_model))
+```
+## 2.4 Ridge Regression Analysis
+```{r Ridge Regression Analysis}
+# Define the penalty parameters to test
+lambdas <- c(1, 100, 1000)
+# Initialize a data frame to store results
+results <- data.frame(
+  Lambda = numeric(),
+  DF = numeric(),
+  Train_MSE = numeric(),
+  Test_MSE = numeric()
+)
+# Loop through each lambda
+for (lam in lambdas){
+  # Optimize parameters using RidgeOpt
+  opt_res <- RidgeOpt(lambda = lam, X = X_train, y = y_train)
+  theta_hat <- opt_res$theta
+  # Calculate Degrees of Freedom
+  df_val <- DF(lambda = lam, X = X_train)
+  # Predict on Training Data
+  # Model: y = X * theta (no intercept)
+  pred_train <- X_train %*% theta_hat
+  mse_train <- mean((y_train - pred_train)^2)
+  # Predict on Test Data
+  pred_test <- X_test %*% theta_hat
+  mse_test <- mean((y_test - pred_test)^2)
+  # Store results
+  results <- rbind(results, data.frame(
+    Lambda = lam,
+    DF = df_val,
+    Train_MSE = mse_train,
+    Test_MSE = mse_test
+  ))
+}
+print("--- Ridge Regression Results ---")
+print(results)
+# Visualization
+# Log scale for x-axis
+x_vals <- log10(results$Lambda) 
+y_min <- min(results$Train_MSE, results$Test_MSE) * 0.99
+y_max <- max(results$Train_MSE, results$Test_MSE) * 1.01
+
+# Create empty plot with correct limits
+plot(x_vals, results$Train_MSE, 
+     type = "n", # Don't plot points yet
+     ylim = c(y_min, y_max),
+     xlab = "Log10(Lambda)", ylab = "MSE (Standardized)",
+     main = "Ridge Regression: MSE vs Penalty",
+     xaxt = "n") # Turn off default x-axis to customize it
+
+# Add custom x-axis labels (1, 100, 1000)
+axis(1, at = x_vals, labels = c("1 (Log=0)", "100 (Log=2)", "1000 (Log=3)"))
+
+# Plot Lines and Points
+lines(x_vals, results$Train_MSE, type = "b", col = "blue", pch = 19, lwd = 2)
+lines(x_vals, results$Test_MSE, type = "b", col = "red", pch = 19, lwd = 2)
+
+# Add Text Labels (Values)
+# pos=3 means "above", pos=1 means "below"
+text(x_vals, results$Train_MSE, labels = round(results$Train_MSE, 4), pos = 1, cex = 0.8, col = "blue")
+text(x_vals, results$Test_MSE, labels = round(results$Test_MSE, 4), pos = 3, cex = 0.8, col = "red")
+
+# Add Legend (Moved to Bottom Right to avoid overlap)
+legend("bottomright", legend = c("Train MSE", "Test MSE"),
+       col = c("blue", "red"), lty = 1, pch = 19, lwd = 2, bty = "n")
+
+grid()
 ```
